@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 APP_TITLE = "HTML to APK Offline Converter"
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 TEMPLATE = os.path.join(ROOT, "android-template")
 VERSIONS = {
     "Android 4.0 (API 14)": 14, "Android 4.1 (API 16)": 16,
