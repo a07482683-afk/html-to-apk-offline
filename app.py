@@ -52,8 +52,8 @@ class Converter(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(APP_TITLE)
-        self.geometry("760x610")
-        self.minsize(680, 560)
+        self.geometry("820x710")
+        self.minsize(760, 660)
         self.configure(padx=18, pady=16)
         self.source = tk.StringVar()
         self.app_name = tk.StringVar(value="My HTML App")
