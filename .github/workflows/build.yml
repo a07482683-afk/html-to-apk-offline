@@ -20,7 +20,7 @@ jobs:
       - name: Install PyInstaller
         run: python -m pip install --upgrade pip pyinstaller==5.13.2
       - name: Build EXE
-        run: pyinstaller --noconfirm --clean --onefile --windowed --name HTML-to-APK app.py
+        run: pyinstaller --noconfirm --clean --onefile --windowed --add-data "android-template;android-template" --name HTML-to-APK app.py
       - uses: actions/upload-artifact@v4
         with:
           name: HTML-to-APK-Windows
