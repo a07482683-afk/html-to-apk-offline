@@ -173,7 +173,7 @@ class Converter(tk.Tk):
         with open(path, "w", encoding="utf-8") as f: f.write(data)
 
     def _xml_escape(self, text):
-        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', '\\"').replace("'", "\\'")
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "\\'")
 
     def build_apk(self):
         project = self.entry.get().strip()
