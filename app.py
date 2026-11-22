@@ -236,7 +236,8 @@ class Converter(tk.Tk):
                 env["ANDROID_HOME"] = sdk_root
                 env["ANDROID_SDK_ROOT"] = sdk_root
                 env["PATH"] = os.path.join(java_root, "bin") + os.pathsep + os.path.join(sdk_root, "platform-tools") + os.pathsep + env.get("PATH", "")
-                cmd = [gradle, "--offline", "assembleDebug", "--no-daemon"]
+                args = [gradle, "--offline", "assembleDebug", "--no-daemon"]
+                cmd = ["cmd.exe", "/c"] + args if sys.platform == "win32" else args
                 proc = subprocess.run(cmd, cwd=project, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                 apk = os.path.join(project, "app", "build", "outputs", "apk", "debug", "app-debug.apk")
                 if proc.returncode == 0 and os.path.isfile(apk):
