@@ -60,6 +60,9 @@ class Converter(tk.Tk):
         self.package_id = tk.StringVar(value="com.example.htmlapp")
         self.version = tk.StringVar(value="Android 4.0 (API 14)")
         self.output = tk.StringVar(value=os.path.join(os.path.expanduser("~"), "HTML-to-APK-Projects"))
+        self.gradle_path = tk.StringVar(value=os.environ.get("GRADLE_HOME", ""))
+        self.java_home = tk.StringVar(value=os.environ.get("JAVA_HOME", ""))
+        self.android_sdk = tk.StringVar(value=os.environ.get("ANDROID_HOME", os.environ.get("ANDROID_SDK_ROOT", "")))
         self.entry = tk.StringVar()
         self.status = tk.StringVar(value="Ready. Select an HTML file, website folder, or ZIP.")
         self._build_ui()
@@ -80,7 +83,12 @@ class Converter(tk.Tk):
         row = ttk.Frame(meta); row.pack(fill="x", pady=5)
         ttk.Label(row, text="Minimum Android", width=20).pack(side="left")
         ttk.Combobox(row, textvariable=self.version, values=list(VERSIONS.keys()), state="readonly").pack(side="left", fill="x", expand=True)
-        out = ttk.LabelFrame(self, text="3. Output", padding=12)
+        tools = ttk.LabelFrame(self, text="3. Local build tools (one-time setup)", padding=12)
+        tools.pack(fill="x", pady=6)
+        self._path_field(tools, "Gradle 8.7 folder", self.gradle_path, self.pick_gradle)
+        self._path_field(tools, "JDK 17 folder", self.java_home, self.pick_java)
+        self._path_field(tools, "Android SDK folder", self.android_sdk, self.pick_sdk)
+        out = ttk.LabelFrame(self, text="4. Output", padding=12)
         out.pack(fill="x", pady=6)
         ttk.Entry(out, textvariable=self.output).pack(side="left", fill="x", expand=True, padx=(0, 8))
         ttk.Button(out, text="Browse", command=self.pick_output).pack(side="left")
@@ -92,7 +100,7 @@ class Converter(tk.Tk):
         ttk.Button(actions, text="Open output folder", command=self.open_output).pack(side="right")
         logbox = ttk.LabelFrame(self, text="Status", padding=10); logbox.pack(fill="both", expand=True)
         ttk.Label(logbox, textvariable=self.status, wraplength=690, justify="left").pack(anchor="w")
-        ttk.Label(logbox, text="HTML5: JavaScript, local storage, Canvas/SVG and local media are supported according to the device WebView. Android 5+ recommended; Android 4.x may not support modern HTML5 features. APK compilation needs JDK 17, Android SDK Platform 35 and Gradle 8.7.", foreground="#64748b", wraplength=690).pack(anchor="w", pady=(12, 0))
+        ttk.Label(logbox, text="HTML5 support depends on the Android WebView. Offline APK build uses local Gradle 8.7, JDK 17 and Android SDK 35. Install/cache these tools and dependencies once; then Build APK uses Gradle --offline.", foreground="#64748b", wraplength=690).pack(anchor="w", pady=(12, 0))
 
     def _field(self, parent, label, variable):
         row = ttk.Frame(parent); row.pack(fill="x", pady=5)
@@ -114,6 +122,24 @@ class Converter(tk.Tk):
     def pick_output(self):
         p = filedialog.askdirectory()
         if p: self.output.set(p)
+
+    def _path_field(self, parent, label, variable, callback):
+        row = ttk.Frame(parent); row.pack(fill="x", pady=3)
+        ttk.Label(row, text=label, width=20).pack(side="left")
+        ttk.Entry(row, textvariable=variable).pack(side="left", fill="x", expand=True, padx=(0, 6))
+        ttk.Button(row, text="Browse", command=callback).pack(side="left")
+
+    def pick_gradle(self):
+        p = filedialog.askdirectory(title="Select Gradle 8.7 folder")
+        if p: self.gradle_path.set(p)
+
+    def pick_java(self):
+        p = filedialog.askdirectory(title="Select JDK 17 installation folder")
+        if p: self.java_home.set(p)
+
+    def pick_sdk(self):
+        p = filedialog.askdirectory(title="Select Android SDK folder")
+        if p: self.android_sdk.set(p)
 
     def open_output(self):
         p = self.output.get()
@@ -179,16 +205,39 @@ class Converter(tk.Tk):
         project = self.entry.get().strip()
         if not project or not os.path.isdir(project):
             messagebox.showwarning("No project", "Create an Android project first."); return
-        gradle = shutil.which("gradle")
+        gradle_root = self.gradle_path.get().strip() or os.environ.get("GRADLE_HOME", "")
+        java_root = self.java_home.get().strip() or os.environ.get("JAVA_HOME", "")
+        sdk_root = self.android_sdk.get().strip() or os.environ.get("ANDROID_HOME", os.environ.get("ANDROID_SDK_ROOT", ""))
+        candidates = []
+        if gradle_root:
+            candidates.extend([os.path.join(gradle_root, "bin", "gradle.bat"), os.path.join(gradle_root, "bin", "gradle")])
+            if os.path.basename(gradle_root).lower() == "bin":
+                candidates.insert(0, os.path.join(gradle_root, "gradle.bat"))
+        candidates.append(shutil.which("gradle"))
+        gradle = next((p for p in candidates if p and os.path.isfile(p)), None)
         if not gradle:
-            messagebox.showerror("Gradle not found", "Install Gradle 8.7 and add it to PATH. Also install JDK 17 and Android SDK Platform 35.")
+            messagebox.showerror("Gradle not found", "Select the extracted Gradle 8.7 folder. It must contain bin\\gradle.bat. The app will not download anything.")
+            return
+        if not java_root or not os.path.isfile(os.path.join(java_root, "bin", "java.exe")):
+            messagebox.showerror("JDK 17 not found", "Select the JDK 17 installation folder. It must contain bin\\java.exe.")
+            return
+        if not sdk_root or not os.path.isdir(os.path.join(sdk_root, "platforms", "android-35")):
+            messagebox.showerror("Android SDK 35 not found", "Select the Android SDK folder containing platforms\\android-35.")
+            return
+        if not os.path.isdir(os.path.join(sdk_root, "build-tools", "35.0.0")):
+            messagebox.showerror("Build Tools not found", "Install Android SDK Build-Tools 35.0.0 first.")
             return
         self.build_btn.configure(state="disabled")
-        self.status.set("Building APK... This can take several minutes.")
+        self.status.set("Building APK in OFFLINE mode... This can take several minutes.")
         def worker():
             try:
-                cmd = [gradle, "assembleDebug", "--no-daemon"]
-                proc = subprocess.run(cmd, cwd=project, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                env = os.environ.copy()
+                env["JAVA_HOME"] = java_root
+                env["ANDROID_HOME"] = sdk_root
+                env["ANDROID_SDK_ROOT"] = sdk_root
+                env["PATH"] = os.path.join(java_root, "bin") + os.pathsep + os.path.join(sdk_root, "platform-tools") + os.pathsep + env.get("PATH", "")
+                cmd = [gradle, "--offline", "assembleDebug", "--no-daemon"]
+                proc = subprocess.run(cmd, cwd=project, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                 apk = os.path.join(project, "app", "build", "outputs", "apk", "debug", "app-debug.apk")
                 if proc.returncode == 0 and os.path.isfile(apk):
                     self.after(0, lambda: self.status.set("Build successful!\nAPK: " + apk))
