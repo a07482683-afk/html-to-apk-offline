@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
+        if (Build.VERSION.SDK_INT >= 17) {\n            settings.setMediaPlaybackRequiresUserGesture(false);\n        }
 
         // Keep local site files accessible while avoiding broad cross-origin file access.
         if (Build.VERSION.SDK_INT >= 16) {
