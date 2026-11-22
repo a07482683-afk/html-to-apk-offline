@@ -66,7 +66,7 @@ class Converter(tk.Tk):
 
     def _build_ui(self):
         ttk.Label(self, text="HTML to APK", font=("Segoe UI", 22, "bold")).pack(anchor="w")
-        ttk.Label(self, text="Offline website packager • Windows desktop", foreground="#64748b").pack(anchor="w", pady=(0, 14))
+        ttk.Label(self, text="HTML5 / CSS3 / JavaScript → Android APK • Offline website packager", foreground="#64748b").pack(anchor="w", pady=(0, 14))
         src = ttk.LabelFrame(self, text="1. Website source", padding=12)
         src.pack(fill="x", pady=6)
         ttk.Entry(src, textvariable=self.source).pack(side="left", fill="x", expand=True, padx=(0, 8))
@@ -92,7 +92,7 @@ class Converter(tk.Tk):
         ttk.Button(actions, text="Open output folder", command=self.open_output).pack(side="right")
         logbox = ttk.LabelFrame(self, text="Status", padding=10); logbox.pack(fill="both", expand=True)
         ttk.Label(logbox, textvariable=self.status, wraplength=690, justify="left").pack(anchor="w")
-        ttk.Label(logbox, text="Note: APK compilation needs JDK 17, Android SDK Platform 35 and Gradle 8.7. The converter UI and website packaging work offline.", foreground="#64748b", wraplength=690).pack(anchor="w", pady=(12, 0))
+        ttk.Label(logbox, text="HTML5: JavaScript, local storage, Canvas/SVG and local media are supported according to the device WebView. Android 5+ recommended; Android 4.x may not support modern HTML5 features. APK compilation needs JDK 17, Android SDK Platform 35 and Gradle 8.7.", foreground="#64748b", wraplength=690).pack(anchor="w", pady=(12, 0))
 
     def _field(self, parent, label, variable):
         row = ttk.Frame(parent); row.pack(fill="x", pady=5)
